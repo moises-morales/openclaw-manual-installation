@@ -1,0 +1,45 @@
+services:
+  openclaw:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: openclaw-dev
+
+    # ── Interactive mode (needed for manual install via terminal) ─────────────
+    stdin_open: true
+    tty: true
+
+    # ── Gateway port (WebSocket control plane) ────────────────────────────────
+    ports:
+      - "18789:18789"   # Gateway WebSocket + Control UI
+      - "18790:18790"   # WebChat UI (if enabled)
+
+    # ── Environment ───────────────────────────────────────────────────────────
+    environment:
+      - NODE_ENV=production
+      # Increase Node.js heap to 4 GB (prevents OOM during onboard/build)
+      - NODE_OPTIONS=--max-old-space-size=4096
+      # Set your AI provider API key here or via .env file
+      # - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      # - OPENAI_API_KEY=${OPENAI_API_KEY}
+      # Chromium path for the browser tool
+      - CHROME_PATH=/usr/bin/chromium
+
+    # ── Volumes ───────────────────────────────────────────────────────────────
+    volumes:
+      # Persist source code between container restarts
+      - openclaw-source:/openclaw
+      # ~/.openclaw/ — config, credentials, sessions (shared with Mac)
+      - ${HOME}/.openclaw:/root/.openclaw:rw
+      # ~/.openclaw/workspace — agent workspace / skills (shared with Mac)
+      - ${HOME}/.openclaw/workspace:/root/.openclaw/workspace:rw
+
+    # ── Resources ─────────────────────────────────────────────────────────────
+    mem_limit: 6g
+
+    # ── Keep container alive ──────────────────────────────────────────────────
+    command: /bin/bash
+
+volumes:
+  openclaw-source:
+    driver: local
